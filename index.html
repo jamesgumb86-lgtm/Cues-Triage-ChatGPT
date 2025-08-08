@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CUES Triage Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-soft: #0e1428;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-700: #1d4ed8;
+      --primary-100: #dbeafe;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
+      --radius: 16px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --surface: #0f172a;
+        --surface-2: #0b1222;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --primary-100: #1e293b;
+      }
+    }
+
+    body {
+      background:
+        radial-gradient(1200px 800px at 50% -10%, rgba(37, 99, 235, .10), transparent 60%),
+        radial-gradient(800px 600px at 120% 20%, rgba(16, 185, 129, .10), transparent 60%),
+        #f6f8fb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background:
+          radial-gradient(1200px 800px at 50% -10%, rgba(37, 99, 235, .15), transparent 60%),
+          radial-gradient(800px 600px at 120% 20%, rgba(16, 185, 129, .12), transparent 60%),
+          #0b1020;
+      }
+    }
+
+    * {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        scroll-behavior: auto;
+      }
+    }
+
+    h1, h2, h3, p {
+      text-wrap: balance;
+    }
+
+    .elevated {
+      border-radius: var(--radius);
+      border: 1px solid rgba(15, 23, 42, .08);
+      background: var(--surface);
+      box-shadow: 0 10px 30px rgba(2, 6, 23, .06);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      padding: .8rem 1.1rem;
+      border-radius: 12px;
+      font-weight: 650;
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+      outline: none;
+    }
+
+    .btn:focus-visible {
+      box-shadow: var(--ring);
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, var(--primary), var(--primary-700));
+      color: white;
+      box-shadow: 0 6px 18px rgba(37, 99, 235, .25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-quiet {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid rgba(15, 23, 42, .08);
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .25rem .6rem;
+      border-radius: 9999px;
+      font-size: .78rem;
+      font-weight: 600;
+      background: var(--primary-100);
+      color: var(--primary);
+    }
+
+    .appbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: saturate(120%) blur(6px);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      border-bottom: 1px solid rgba(15, 23, 42, .06);
+    }
+
+    .progress-track {
+      height: 6px;
+      border-radius: 9999px;
+      background: rgba(15, 23, 42, .08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), #60a5fa);
+    }
+  </style>
+</head>
+<body class="text-slate-800 dark:text-slate-100">
+  <header class="appbar w-full">
+    <div class="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500"></div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold">CUES Triage</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Community Urgent Eyecare Service</p>
+        </div>
+      </div>
+      <button class="btn btn-quiet text-sm hidden">Start over</button>
+    </div>
+    <div class="mx-auto max-w-4xl px-4 pb-3">
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-bar"></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="triage-flow" class="mx-auto max-w-4xl px-4 py-8">
+    <section class="elevated p-6 sm:p-8">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Begin triage</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
+          Patient details
+        </h2>
+        <p class="text-slate-600 dark:text-slate-400">
+          We’ll guide you through a few quick questions and recommend next steps.
+        </p>
+      </div>
+      <div class="grid gap-5">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Patient name</label>
+          <input id="patient-name" type="text" placeholder="Jane Doe" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Date of birth</label>
+            <input id="patient-dob" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Phone</label>
+            <input id="patient-phone" type="tel" placeholder="07123 456789" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Symptom onset</label>
+          <input id="symptom-onset" type="text" placeholder="Yesterday, 3 hours ago" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+          <button class="btn btn-primary w-full">Start emergency triage</button>
+          <button class="btn btn-quiet w-full">Proceed to symptom selection</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Your JS logic can go here
+  </script>
+</body>
+</html>
