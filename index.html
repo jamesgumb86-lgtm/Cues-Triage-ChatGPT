@@ -19,6 +19,7 @@
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
+      --danger-700: #b91c1c;
       --ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
       --radius: 16px;
     }
@@ -80,6 +81,8 @@
       font-weight: 650;
       transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
       outline: none;
+      cursor: pointer;
+      border: none;
     }
 
     .btn:focus-visible {
@@ -102,6 +105,28 @@
       border: 1px solid rgba(15, 23, 42, .08);
     }
 
+    .btn-danger {
+      background: linear-gradient(180deg, var(--danger), var(--danger-700));
+      color: white;
+      box-shadow: 0 6px 18px rgba(239, 68, 68, .25);
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: .45rem .8rem;
+      font-size: .82rem;
+      border-radius: 10px;
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .chip {
       display: inline-flex;
       align-items: center;
@@ -112,6 +137,21 @@
       font-weight: 600;
       background: var(--primary-100);
       color: var(--primary);
+    }
+
+    .chip-danger {
+      background: rgba(239, 68, 68, .12);
+      color: var(--danger);
+    }
+
+    .chip-warning {
+      background: rgba(245, 158, 11, .14);
+      color: var(--warning);
+    }
+
+    .chip-success {
+      background: rgba(16, 185, 129, .14);
+      color: var(--success);
     }
 
     .appbar {
@@ -134,20 +174,90 @@
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, var(--primary), #60a5fa);
+      transition: width .3s ease;
+    }
+
+    .option-card {
+      display: flex;
+      align-items: flex-start;
+      gap: .75rem;
+      padding: .9rem 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, .12);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease;
+    }
+
+    .option-card:hover {
+      border-color: var(--primary);
+    }
+
+    .option-card:has(input:checked) {
+      border-color: var(--primary);
+      background: var(--primary-100);
+    }
+
+    .field-error {
+      color: var(--danger);
+      font-size: .82rem;
+      margin-top: .35rem;
+      display: none;
+    }
+
+    .field-error.visible {
+      display: block;
+    }
+
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    .sub-block {
+      border-left: 3px solid rgba(37, 99, 235, .35);
+      padding-left: 1rem;
+      margin-top: .5rem;
+    }
+
+    .outcome-card {
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      border: 1px solid rgba(15, 23, 42, .1);
+    }
+
+    .outcome-card.severity-danger {
+      background: rgba(239, 68, 68, .08);
+      border-color: rgba(239, 68, 68, .3);
+    }
+
+    .outcome-card.severity-warning {
+      background: rgba(245, 158, 11, .1);
+      border-color: rgba(245, 158, 11, .3);
+    }
+
+    .outcome-card.severity-info {
+      background: var(--primary-100);
+      border-color: rgba(37, 99, 235, .25);
     }
   </style>
 </head>
 <body class="text-slate-800 dark:text-slate-100">
   <header class="appbar w-full">
-    <div class="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500"></div>
-        <div>
-          <h1 class="text-xl sm:text-2xl font-bold">CUES Triage</h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Community Urgent Eyecare Service</p>
+    <div class="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 shrink-0"></div>
+        <div class="min-w-0">
+          <h1 class="text-xl sm:text-2xl font-bold truncate">CUES Triage</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Staff decision-support aid for call handlers</p>
         </div>
       </div>
-      <button class="btn btn-quiet text-sm hidden">Start over</button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="emergency-shortcut-btn" class="btn btn-danger btn-sm" type="button">Emergency</button>
+        <button id="start-over-btn" class="btn btn-quiet btn-sm hidden" type="button">Start over</button>
+      </div>
     </div>
     <div class="mx-auto max-w-4xl px-4 pb-3">
       <div class="progress-track">
@@ -157,45 +267,855 @@
   </header>
 
   <main id="triage-flow" class="mx-auto max-w-4xl px-4 py-8">
-    <section class="elevated p-6 sm:p-8">
+
+    <div class="elevated p-4 mb-6 text-sm" style="border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.08);">
+      <p class="font-semibold text-slate-900 dark:text-slate-100">Source &amp; scope</p>
+      <p class="text-slate-700 dark:text-slate-300 mt-1">
+        This tool follows the <em>CUES Eligibility Screening/Triage</em> script, version 1.0 (20/12/2021).
+        Confirm with your service that this is still the current approved protocol before relying on it — ask the
+        optometrist if in doubt. It is decision support only: some outcomes require discussing the case with a
+        CUES practitioner rather than a fully automated decision. If the patient is feeling generally unwell,
+        advise them to seek medical advice or discuss with the optometrist at the time of booking.
+      </p>
+    </div>
+
+    <!-- Emergency shortcut -->
+    <section class="elevated p-6 sm:p-8 step" data-step="emergency">
       <div class="mb-6 text-center space-y-2">
-        <span class="chip">Begin triage</span>
+        <span class="chip chip-danger">Urgent</span>
         <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">
-          Patient details
+          Get emergency help now
         </h2>
-        <p class="text-slate-600 dark:text-slate-400">
-          We’ll guide you through a few quick questions and recommend next steps.
-        </p>
       </div>
-      <div class="grid gap-5">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Patient name</label>
-          <input id="patient-name" type="text" placeholder="Jane Doe" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-        </div>
-        <div class="grid sm:grid-cols-2 gap-5">
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Date of birth</label>
-            <input id="patient-dob" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Phone</label>
-            <input id="patient-phone" type="tel" placeholder="07123 456789" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Symptom onset</label>
-          <input id="symptom-onset" type="text" placeholder="Yesterday, 3 hours ago" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-        </div>
+      <div class="grid gap-4">
+        <p class="text-slate-700 dark:text-slate-300">
+          If this looks like a medical emergency — for example a chemical splash to the eye, a high-velocity
+          injury, or sudden severe vision loss — advise the patient to call <strong>999</strong> or go straight to
+          <strong>A&amp;E</strong> or the hospital eye service. Do not continue this triage aid for a time-critical
+          situation.
+        </p>
         <div class="grid sm:grid-cols-2 gap-4 pt-2">
-          <button class="btn btn-primary w-full">Start emergency triage</button>
-          <button class="btn btn-quiet w-full">Proceed to symptom selection</button>
+          <button id="emergency-back-btn" class="btn btn-quiet w-full" type="button">Go back</button>
+          <button id="emergency-continue-btn" class="btn btn-primary w-full" type="button">Not an emergency — continue triage</button>
         </div>
       </div>
     </section>
+
+    <!-- Step: intake -->
+    <section class="elevated p-6 sm:p-8 step active" data-step="intake">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Step 1 of 4</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Call &amp; patient details</h2>
+        <p class="text-slate-600 dark:text-slate-400">Record the basics of this call before working through the triage questions.</p>
+      </div>
+      <div class="grid gap-5">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="patient-name">Patient name</label>
+          <input id="patient-name" type="text" placeholder="Jane Doe" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          <p class="field-error" id="patient-name-error">Please enter the patient's name.</p>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="patient-dob">Date of birth</label>
+            <input id="patient-dob" type="date" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="patient-phone">Phone</label>
+            <input id="patient-phone" type="tel" placeholder="07123 456789" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="patient-gp">GP <span class="font-normal text-slate-400">(check eligible)</span></label>
+            <input id="patient-gp" type="text" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="patient-surgery">Surgery</label>
+            <input id="patient-surgery" type="text" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="call-time">Time of call</label>
+            <input id="call-time" type="time" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="taken-by">Taken by</label>
+            <input id="taken-by" type="text" placeholder="Staff name" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="symptoms-comments">Symptoms &amp; comments</label>
+          <textarea id="symptoms-comments" rows="3" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <div class="grid sm:grid-cols-3 gap-5">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="appointment-made">Appointment</label>
+            <select id="appointment-made" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">To be confirmed</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="appointment-time">Appointment time</label>
+            <input id="appointment-time" type="text" placeholder="e.g. 14:30 today" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2" for="referred-by">Referred by</label>
+            <input id="referred-by" type="text" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+          </div>
+        </div>
+        <label class="option-card">
+          <input type="checkbox" id="generally-unwell" class="mt-1">
+          <span>Patient is feeling generally unwell (advise them to seek medical advice or discuss with the optometrist at the time of booking)</span>
+        </label>
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          This information stays in your browser only — it isn't saved or sent anywhere by this tool.
+        </p>
+        <div class="pt-2">
+          <button id="intake-continue-btn" class="btn btn-primary w-full" type="button">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step: consent -->
+    <section class="elevated p-6 sm:p-8 step" data-step="consent">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Step 2 of 4</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Consent</h2>
+        <p class="text-slate-600 dark:text-slate-400">
+          Consent to eye care record sharing is essential to access CUES. Confirm the patient understands and consents to the following.
+        </p>
+      </div>
+      <div class="grid gap-5">
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+            PES clinicians can access eye care records in order to deliver direct care <span class="font-normal text-slate-400">(required to access CUES)</span>
+          </legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="consent-records" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="consent-records" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="consent-records-error">Please select an answer.</p>
+        </fieldset>
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+            PES may contact the patient via text message, email, letter or telephone call regarding their direct care
+          </legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="consent-contact-care" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="consent-contact-care" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="consent-contact-care-error">Please select an answer.</p>
+        </fieldset>
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+            PES can contact the patient via text message, email or letter regarding their experience of the services provided
+          </legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="consent-contact-experience" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="consent-contact-experience" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="consent-contact-experience-error">Please select an answer.</p>
+        </fieldset>
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+            Patient gives explicit permission to view their Summary Care Record
+          </legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="consent-scr" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="consent-scr" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="consent-scr-error">Please select an answer.</p>
+        </fieldset>
+        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+          <button class="btn btn-quiet w-full" id="consent-back-btn" type="button">Back</button>
+          <button id="consent-continue-btn" class="btn btn-primary w-full" type="button">Continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step: consent blocked -->
+    <section class="elevated p-6 sm:p-8 step" data-step="consent-blocked">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip chip-warning">Cannot proceed</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">CUES is not accessible</h2>
+      </div>
+      <p class="text-slate-700 dark:text-slate-300">
+        The patient must consent to clinical information sharing within PES to access the CUES service. Since
+        they have not consented, they cannot be triaged into CUES. Discuss alternative options with them (their
+        GP practice or usual optician).
+      </p>
+      <div class="grid sm:grid-cols-2 gap-4 pt-6">
+        <button class="btn btn-quiet w-full" id="consent-blocked-back-btn" type="button">Back</button>
+        <button class="btn btn-primary w-full" id="consent-blocked-restart-btn" type="button">Start a new call</button>
+      </div>
+    </section>
+
+    <!-- Step: categories -->
+    <section class="elevated p-6 sm:p-8 step" data-step="categories">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Step 3 of 4</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Symptom category</h2>
+        <p class="text-slate-600 dark:text-slate-400">Select every category that applies — symptoms may fall into multiple sections.</p>
+      </div>
+      <div class="grid gap-3">
+        <label class="option-card">
+          <input type="checkbox" class="mt-1 cat-checkbox" value="cl">
+          <span>Contact-lens related / problem with eye — painful, sore, red, sticky, watery, itchy or irritated</span>
+        </label>
+        <label class="option-card">
+          <input type="checkbox" class="mt-1 cat-checkbox" value="foreign">
+          <span>Foreign body (something in the eye)</span>
+        </label>
+        <label class="option-card">
+          <input type="checkbox" class="mt-1 cat-checkbox" value="vision">
+          <span>Problem with vision (including field of vision and sudden onset double vision)</span>
+        </label>
+        <label class="option-card">
+          <input type="checkbox" class="mt-1 cat-checkbox" value="flashes">
+          <span>Flashes and/or floaters</span>
+        </label>
+        <label class="option-card">
+          <input type="checkbox" id="cat-other" class="mt-1">
+          <span>None of these / not listed here</span>
+        </label>
+        <p class="field-error" id="categories-error">Please select at least one category.</p>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-4 pt-6">
+        <button class="btn btn-quiet w-full" id="categories-back-btn" type="button">Back</button>
+        <button id="categories-continue-btn" class="btn btn-primary w-full" type="button">Continue</button>
+      </div>
+    </section>
+
+    <!-- Category step: CL / painful eye -->
+    <section class="elevated p-6 sm:p-8 step" data-step="cat-cl">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Category</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Contact lens / painful, sore, red eye</h2>
+      </div>
+      <div class="grid gap-5">
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is the patient registered with your practice?</legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="cl-own-practice" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="cl-own-practice" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="cl-own-practice-error">Please select an answer.</p>
+        </fieldset>
+
+        <div id="cl-subquestions" class="sub-block" style="display:none;">
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Advise the patient to contact their usual practice first. If it's closed, continue below.
+          </p>
+          <div class="grid gap-5">
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is it painful?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="cl-painful" value="yes" class="mt-1"><span>Yes</span></label>
+                <label class="option-card"><input type="radio" name="cl-painful" value="no" class="mt-1"><span>No</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is there any light sensitivity?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="cl-light" value="yes" class="mt-1"><span>Yes</span></label>
+                <label class="option-card"><input type="radio" name="cl-light" value="no" class="mt-1"><span>No</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is there a change in vision?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="cl-vision-change" value="yes" class="mt-1"><span>Yes</span></label>
+                <label class="option-card"><input type="radio" name="cl-vision-change" value="no" class="mt-1"><span>No</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is this a self-referral?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="cl-self-referred" value="yes" class="mt-1"><span>Yes</span></label>
+                <label class="option-card"><input type="radio" name="cl-self-referred" value="no" class="mt-1"><span>No</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is the patient over 2 years old?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="cl-over-two" value="yes" class="mt-1"><span>Yes</span></label>
+                <label class="option-card"><input type="radio" name="cl-over-two" value="no" class="mt-1"><span>No</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">When did symptoms start, or when did they last worsen?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="cl-onset" value="lt5" class="mt-1"><span>Less than 5 days ago</span></label>
+                <label class="option-card"><input type="radio" name="cl-onset" value="gte5" class="mt-1"><span>5 days ago or more</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <p class="field-error" id="cl-subquestions-error">Please answer all questions above.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+          <button class="btn btn-quiet w-full cat-back" type="button">Back to categories</button>
+          <button id="cl-continue-btn" class="btn btn-primary w-full" type="button">Save &amp; continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category step: Foreign body -->
+    <section class="elevated p-6 sm:p-8 step" data-step="cat-foreign">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Category</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Foreign body</h2>
+        <p class="text-slate-600 dark:text-slate-400">Something in the eye.</p>
+      </div>
+      <div class="grid gap-5">
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Was it a high velocity / high speed or chemical foreign body?</legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="foreign-high-risk" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="foreign-high-risk" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="foreign-high-risk-error">Please select an answer.</p>
+        </fieldset>
+        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+          <button class="btn btn-quiet w-full cat-back" type="button">Back to categories</button>
+          <button id="foreign-continue-btn" class="btn btn-primary w-full" type="button">Save &amp; continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category step: Vision -->
+    <section class="elevated p-6 sm:p-8 step" data-step="cat-vision">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Category</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Problem with vision</h2>
+        <p class="text-slate-600 dark:text-slate-400">Includes problems with the field of vision and sudden onset double vision.</p>
+      </div>
+      <div class="grid gap-5">
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Does the patient have field loss AND sudden onset double vision (both together)?</legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="vision-fieldloss-diplopia" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="vision-fieldloss-diplopia" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="vision-fieldloss-diplopia-error">Please select an answer.</p>
+        </fieldset>
+
+        <div id="vision-subquestions" class="sub-block" style="display:none;">
+          <div class="grid gap-5">
+            <fieldset>
+              <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Is the vision distorted / wavy in the central part of vision?</legend>
+              <div class="grid sm:grid-cols-2 gap-3">
+                <label class="option-card"><input type="radio" name="vision-distorted" value="yes" class="mt-1"><span>Yes</span></label>
+                <label class="option-card"><input type="radio" name="vision-distorted" value="no" class="mt-1"><span>No</span></label>
+              </div>
+              <p class="field-error" id="vision-distorted-error">Please select an answer.</p>
+            </fieldset>
+            <div id="vision-onset-wrap" style="display:none;">
+              <fieldset>
+                <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">When did the vision problem start?</legend>
+                <div class="grid sm:grid-cols-2 gap-3">
+                  <label class="option-card"><input type="radio" name="vision-onset" value="lt1month" class="mt-1"><span>Less than 1 month ago</span></label>
+                  <label class="option-card"><input type="radio" name="vision-onset" value="gte1month" class="mt-1"><span>1 month ago or more</span></label>
+                </div>
+                <p class="field-error" id="vision-onset-error">Please select an answer.</p>
+              </fieldset>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+          <button class="btn btn-quiet w-full cat-back" type="button">Back to categories</button>
+          <button id="vision-continue-btn" class="btn btn-primary w-full" type="button">Save &amp; continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category step: Flashes / floaters -->
+    <section class="elevated p-6 sm:p-8 step" data-step="cat-flashes">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Category</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Flashes and/or floaters</h2>
+      </div>
+      <div class="grid gap-5">
+        <fieldset>
+          <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Does the patient have a large curtain or veil in their vision?</legend>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="option-card"><input type="radio" name="flash-curtain" value="yes" class="mt-1"><span>Yes</span></label>
+            <label class="option-card"><input type="radio" name="flash-curtain" value="no" class="mt-1"><span>No</span></label>
+          </div>
+          <p class="field-error" id="flash-curtain-error">Please select an answer.</p>
+        </fieldset>
+
+        <div id="flash-onset-wrap" style="display:none;">
+          <fieldset>
+            <legend class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">When did it start, or when did it last change or get worse?</legend>
+            <div class="grid gap-3">
+              <label class="option-card"><input type="radio" name="flash-onset" value="lt8weeks" class="mt-1"><span>Less than 8 weeks ago</span></label>
+              <label class="option-card"><input type="radio" name="flash-onset" value="8to12worsening" class="mt-1"><span>8–12 weeks ago, with worsening symptoms</span></label>
+              <label class="option-card"><input type="radio" name="flash-onset" value="gt12weeks" class="mt-1"><span>More than 12 weeks ago</span></label>
+            </div>
+            <p class="field-error" id="flash-onset-error">Please select an answer.</p>
+          </fieldset>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4 pt-2">
+          <button class="btn btn-quiet w-full cat-back" type="button">Back to categories</button>
+          <button id="flash-continue-btn" class="btn btn-primary w-full" type="button">Save &amp; continue</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step: summary -->
+    <section class="elevated p-6 sm:p-8 step" data-step="summary">
+      <div class="mb-6 text-center space-y-2">
+        <span class="chip">Step 4 of 4</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Recommended actions</h2>
+      </div>
+      <div class="grid gap-4" id="summary-body"></div>
+      <div class="grid sm:grid-cols-2 gap-4 pt-6">
+        <button class="btn btn-quiet w-full" id="summary-back-btn" type="button">Back</button>
+        <button class="btn btn-primary w-full" id="summary-restart-btn" type="button">Start a new call</button>
+      </div>
+    </section>
+
+    <footer class="mt-8 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+      <p>More information: <a class="underline" href="https://primaryeyecare.co.uk" target="_blank" rel="noopener">primaryeyecare.co.uk</a></p>
+      <p>Concerns, complaints or compliments: <a class="underline" href="mailto:info@primaryeyecare.co.uk">info@primaryeyecare.co.uk</a></p>
+    </footer>
   </main>
 
   <script>
-    // Your JS logic can go here
+    (function () {
+      const steps = Array.from(document.querySelectorAll('.step'));
+      const progressBar = document.getElementById('progress-bar');
+      const startOverBtn = document.getElementById('start-over-btn');
+
+      const state = {
+        categoryQueue: [],
+        categoryIndex: 0,
+        outcomes: [], // { title, text, severity }
+        preEmergencyStep: 'intake',
+      };
+
+      const CATEGORY_META = {
+        cl: { title: 'Contact lens related / painful, sore, red eye', stepId: 'cat-cl' },
+        foreign: { title: 'Foreign body', stepId: 'cat-foreign' },
+        vision: { title: 'Problem with vision', stepId: 'cat-vision' },
+        flashes: { title: 'Flashes and/or floaters', stepId: 'cat-flashes' },
+      };
+
+      function currentStepKey() {
+        const active = steps.find(function (s) { return s.classList.contains('active'); });
+        return active ? active.dataset.step : 'intake';
+      }
+
+      function showStep(stepKey) {
+        steps.forEach(function (section) {
+          section.classList.toggle('active', section.dataset.step === stepKey);
+        });
+        startOverBtn.classList.toggle('hidden', stepKey === 'intake');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function setProgress(pct) {
+        progressBar.style.width = pct + '%';
+      }
+
+      function updateMainFlowProgress(stepKey) {
+        // intake=1, consent=2, categories=3, each category step counts within step 3-4 span, summary=4
+        const order = ['intake', 'consent', 'categories'];
+        let idx = order.indexOf(stepKey);
+        if (idx !== -1) {
+          setProgress(((idx + 1) / 4) * 100);
+          return;
+        }
+        if (stepKey === 'summary') {
+          setProgress(100);
+          return;
+        }
+        // a category detail step: interpolate between categories(3) and summary(4)
+        const total = state.categoryQueue.length || 1;
+        const fraction = (state.categoryIndex + 1) / (total + 1);
+        setProgress(((3 + fraction) / 4) * 100);
+      }
+
+      function goTo(stepKey) {
+        showStep(stepKey);
+        updateMainFlowProgress(stepKey);
+      }
+
+      function showError(id, show) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('visible', !!show);
+      }
+
+      function radioValue(name) {
+        const el = document.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : null;
+      }
+
+      // Set sensible defaults for a live call log
+      const now = new Date();
+      document.getElementById('call-time').value = now.toTimeString().slice(0, 5);
+
+      startOverBtn.addEventListener('click', resetAll);
+
+      // ---------- Emergency shortcut ----------
+      document.getElementById('emergency-shortcut-btn').addEventListener('click', function () {
+        state.preEmergencyStep = currentStepKey();
+        showStep('emergency');
+      });
+      document.getElementById('emergency-back-btn').addEventListener('click', function () {
+        goTo(state.preEmergencyStep);
+      });
+      document.getElementById('emergency-continue-btn').addEventListener('click', function () {
+        goTo(state.preEmergencyStep);
+      });
+
+      // ---------- Intake ----------
+      document.getElementById('intake-continue-btn').addEventListener('click', function () {
+        const name = document.getElementById('patient-name').value.trim();
+        showError('patient-name-error', !name);
+        if (!name) return;
+        goTo('consent');
+      });
+
+      // ---------- Consent ----------
+      document.getElementById('consent-back-btn').addEventListener('click', function () {
+        goTo('intake');
+      });
+      document.getElementById('consent-continue-btn').addEventListener('click', function () {
+        const records = radioValue('consent-records');
+        const contactCare = radioValue('consent-contact-care');
+        const contactExperience = radioValue('consent-contact-experience');
+        const scr = radioValue('consent-scr');
+
+        showError('consent-records-error', !records);
+        showError('consent-contact-care-error', !contactCare);
+        showError('consent-contact-experience-error', !contactExperience);
+        showError('consent-scr-error', !scr);
+        if (!records || !contactCare || !contactExperience || !scr) return;
+
+        if (records === 'no') {
+          showStep('consent-blocked');
+          setProgress(100);
+          return;
+        }
+        goTo('categories');
+      });
+      document.getElementById('consent-blocked-back-btn').addEventListener('click', function () {
+        goTo('consent');
+      });
+      document.getElementById('consent-blocked-restart-btn').addEventListener('click', resetAll);
+
+      // ---------- Categories ----------
+      const catCheckboxes = Array.from(document.querySelectorAll('.cat-checkbox'));
+      const catOther = document.getElementById('cat-other');
+      catOther.addEventListener('change', function () {
+        if (catOther.checked) catCheckboxes.forEach(function (c) { c.checked = false; });
+      });
+      catCheckboxes.forEach(function (c) {
+        c.addEventListener('change', function () {
+          if (c.checked) catOther.checked = false;
+        });
+      });
+
+      document.getElementById('categories-back-btn').addEventListener('click', function () {
+        goTo('consent');
+      });
+
+      document.getElementById('categories-continue-btn').addEventListener('click', function () {
+        const selected = catCheckboxes.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+        const otherSelected = catOther.checked;
+
+        showError('categories-error', !otherSelected && selected.length === 0);
+        if (!otherSelected && selected.length === 0) return;
+
+        state.outcomes = [];
+
+        if (otherSelected) {
+          state.categoryQueue = [];
+          state.outcomes.push({
+            title: 'Not listed here',
+            text: 'This symptom set is not covered by this decision aid — discuss directly with a CUES practitioner.',
+            severity: 'warning',
+          });
+          renderSummary();
+          goTo('summary');
+          return;
+        }
+
+        state.categoryQueue = ['cl', 'foreign', 'vision', 'flashes'].filter(function (c) { return selected.indexOf(c) !== -1; });
+        state.categoryIndex = 0;
+        goTo(CATEGORY_META[state.categoryQueue[0]].stepId);
+      });
+
+      document.querySelectorAll('.cat-back').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          goTo('categories');
+        });
+      });
+
+      function advanceCategory(outcome) {
+        state.outcomes.push(outcome);
+        state.categoryIndex++;
+        if (state.categoryIndex < state.categoryQueue.length) {
+          goTo(CATEGORY_META[state.categoryQueue[state.categoryIndex]].stepId);
+        } else {
+          renderSummary();
+          goTo('summary');
+        }
+      }
+
+      // ---------- Category: CL / painful eye ----------
+      const clSubquestions = document.getElementById('cl-subquestions');
+      document.querySelectorAll('input[name="cl-own-practice"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          clSubquestions.style.display = r.value === 'no' && r.checked ? 'block' : clSubquestions.style.display;
+          if (r.checked && r.value === 'yes') clSubquestions.style.display = 'none';
+        });
+      });
+
+      document.getElementById('cl-continue-btn').addEventListener('click', function () {
+        const ownPractice = radioValue('cl-own-practice');
+        showError('cl-own-practice-error', !ownPractice);
+        if (!ownPractice) return;
+
+        if (ownPractice === 'yes') {
+          advanceCategory({
+            title: 'Contact lens related / painful, sore, red eye',
+            text: 'Unsuitable for CUES — the patient is registered with your own practice. Follow your own practice protocol.',
+            severity: 'warning',
+          });
+          return;
+        }
+
+        const painful = radioValue('cl-painful');
+        const light = radioValue('cl-light');
+        const visionChange = radioValue('cl-vision-change');
+        const selfReferred = radioValue('cl-self-referred');
+        const overTwo = radioValue('cl-over-two');
+        const onset = radioValue('cl-onset');
+        const allAnswered = painful && light && visionChange && selfReferred && overTwo && onset;
+        showError('cl-subquestions-error', !allAnswered);
+        if (!allAnswered) return;
+
+        const yesCount = [painful, light, visionChange].filter(function (v) { return v === 'yes'; }).length;
+        let text, severity;
+
+        if (yesCount === 3) {
+          text = 'Discuss with a CUES practitioner — a telemedicine or face-to-face consultation may be needed with an IP optometrist or IP remote prescribing access.';
+          severity = 'danger';
+        } else if (yesCount >= 1) {
+          text = 'Arrange a telemedicine assessment (or a face-to-face appointment if advised by the CUES practitioner).';
+          severity = 'info';
+        } else if (selfReferred === 'yes' && overTwo === 'yes' && onset === 'lt5') {
+          text = 'Signpost to self-care / pharmacy. Advise the patient to contact again if not resolved after 5 days or if symptoms worsen. Must be logged as a patient contact on the IT system.';
+          severity = 'info';
+        } else if (selfReferred === 'yes' && overTwo === 'yes' && onset === 'gte5') {
+          text = 'Arrange a telemedicine / face-to-face appointment (symptoms have lasted 5 days or more).';
+          severity = 'info';
+        } else {
+          text = 'Not explicitly covered by this guidance for a practice-referred patient or a patient aged 2 or under with no red-flag symptoms — discuss with a CUES practitioner.';
+          severity = 'warning';
+        }
+
+        advanceCategory({ title: 'Contact lens related / painful, sore, red eye', text: text, severity: severity });
+      });
+
+      // ---------- Category: Foreign body ----------
+      document.getElementById('foreign-continue-btn').addEventListener('click', function () {
+        const highRisk = radioValue('foreign-high-risk');
+        showError('foreign-high-risk-error', !highRisk);
+        if (!highRisk) return;
+
+        if (highRisk === 'yes') {
+          advanceCategory({
+            title: 'Foreign body',
+            text: 'Speak with a CUES practitioner — the patient may need to go straight to the hospital eye service.',
+            severity: 'danger',
+          });
+        } else {
+          advanceCategory({
+            title: 'Foreign body',
+            text: 'Arrange a face-to-face appointment.',
+            severity: 'info',
+          });
+        }
+      });
+
+      // ---------- Category: Vision ----------
+      const visionSubquestions = document.getElementById('vision-subquestions');
+      const visionOnsetWrap = document.getElementById('vision-onset-wrap');
+      document.querySelectorAll('input[name="vision-fieldloss-diplopia"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          if (!r.checked) return;
+          visionSubquestions.style.display = r.value === 'no' ? 'block' : 'none';
+          if (r.value === 'yes') visionOnsetWrap.style.display = 'none';
+        });
+      });
+      document.querySelectorAll('input[name="vision-distorted"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          if (!r.checked) return;
+          visionOnsetWrap.style.display = r.value === 'no' ? 'block' : 'none';
+        });
+      });
+
+      document.getElementById('vision-continue-btn').addEventListener('click', function () {
+        const fieldlossDiplopia = radioValue('vision-fieldloss-diplopia');
+        showError('vision-fieldloss-diplopia-error', !fieldlossDiplopia);
+        if (!fieldlossDiplopia) return;
+
+        if (fieldlossDiplopia === 'yes') {
+          advanceCategory({
+            title: 'Problem with vision',
+            text: 'Book a CUES telemedicine appointment now and inform the clinician immediately (field loss with sudden onset double vision).',
+            severity: 'danger',
+          });
+          return;
+        }
+
+        const distorted = radioValue('vision-distorted');
+        showError('vision-distorted-error', !distorted);
+        if (!distorted) return;
+
+        if (distorted === 'yes') {
+          advanceCategory({
+            title: 'Problem with vision',
+            text: 'Arrange a face-to-face appointment at a practice with an OCT.',
+            severity: 'info',
+          });
+          return;
+        }
+
+        const onset = radioValue('vision-onset');
+        showError('vision-onset-error', !onset);
+        if (!onset) return;
+
+        if (onset === 'lt1month') {
+          advanceCategory({
+            title: 'Problem with vision',
+            text: 'Arrange a telemedicine appointment (or face-to-face if advised by the CUES practitioner).',
+            severity: 'info',
+          });
+        } else {
+          advanceCategory({
+            title: 'Problem with vision',
+            text: 'Discuss with the optometrist — consider whether an essential sight test is required.',
+            severity: 'warning',
+          });
+        }
+      });
+
+      // ---------- Category: Flashes / floaters ----------
+      const flashOnsetWrap = document.getElementById('flash-onset-wrap');
+      document.querySelectorAll('input[name="flash-curtain"]').forEach(function (r) {
+        r.addEventListener('change', function () {
+          if (!r.checked) return;
+          flashOnsetWrap.style.display = r.value === 'no' ? 'block' : 'none';
+        });
+      });
+
+      document.getElementById('flash-continue-btn').addEventListener('click', function () {
+        const curtain = radioValue('flash-curtain');
+        showError('flash-curtain-error', !curtain);
+        if (!curtain) return;
+
+        if (curtain === 'yes') {
+          advanceCategory({
+            title: 'Flashes and/or floaters',
+            text: 'Speak with the optometrist — the patient may need to go straight to the hospital eye service.',
+            severity: 'danger',
+          });
+          return;
+        }
+
+        const onset = radioValue('flash-onset');
+        showError('flash-onset-error', !onset);
+        if (!onset) return;
+
+        if (onset === 'gt12weeks') {
+          advanceCategory({
+            title: 'Flashes and/or floaters',
+            text: 'Not suitable for CUES.',
+            severity: 'warning',
+          });
+        } else {
+          advanceCategory({
+            title: 'Flashes and/or floaters',
+            text: 'Arrange a face-to-face appointment — dilation will be required.',
+            severity: 'info',
+          });
+        }
+      });
+
+      // ---------- Summary ----------
+      document.getElementById('summary-back-btn').addEventListener('click', function () {
+        if (state.categoryQueue.length > 0) {
+          state.categoryIndex = state.categoryQueue.length - 1;
+          state.outcomes.pop();
+          goTo(CATEGORY_META[state.categoryQueue[state.categoryIndex]].stepId);
+        } else {
+          goTo('categories');
+        }
+      });
+      document.getElementById('summary-restart-btn').addEventListener('click', resetAll);
+
+      function renderSummary() {
+        const body = document.getElementById('summary-body');
+        const unwell = document.getElementById('generally-unwell').checked;
+        let html = '';
+
+        if (unwell) {
+          html += '<div class="outcome-card severity-danger">' +
+            '<p class="font-semibold text-slate-900 dark:text-slate-100">Patient reports feeling generally unwell</p>' +
+            '<p class="text-slate-700 dark:text-slate-300 text-sm mt-1">Advise them to seek medical advice, or discuss with the optometrist at the time of booking.</p>' +
+            '</div>';
+        }
+
+        state.outcomes.forEach(function (o) {
+          html += '<div class="outcome-card severity-' + o.severity + '">' +
+            '<p class="font-semibold text-slate-900 dark:text-slate-100">' + o.title + '</p>' +
+            '<p class="text-slate-700 dark:text-slate-300 text-sm mt-1">' + o.text + '</p>' +
+            '</div>';
+        });
+
+        const name = document.getElementById('patient-name').value.trim();
+        const gp = document.getElementById('patient-gp').value.trim();
+        const comments = document.getElementById('symptoms-comments').value.trim();
+        html += '<div class="elevated p-4 text-sm" style="box-shadow:none;">' +
+          '<p><strong>Patient:</strong> ' + (name || '—') + '</p>' +
+          (gp ? '<p><strong>GP:</strong> ' + gp + '</p>' : '') +
+          (comments ? '<p class="mt-2"><strong>Symptoms &amp; comments:</strong> ' + comments + '</p>' : '') +
+          '</div>';
+
+        body.innerHTML = html;
+      }
+
+      function resetAll() {
+        document.querySelectorAll('input[type="text"], input[type="tel"], input[type="date"], input[type="time"], textarea').forEach(function (el) {
+          el.value = '';
+        });
+        document.getElementById('appointment-made').value = '';
+        document.querySelectorAll('input[type="radio"]').forEach(function (r) { r.checked = false; });
+        document.querySelectorAll('input[type="checkbox"]').forEach(function (c) { c.checked = false; });
+        document.querySelectorAll('.field-error').forEach(function (el) { el.classList.remove('visible'); });
+        clSubquestions.style.display = 'none';
+        visionSubquestions.style.display = 'none';
+        visionOnsetWrap.style.display = 'none';
+        flashOnsetWrap.style.display = 'none';
+        state.categoryQueue = [];
+        state.categoryIndex = 0;
+        state.outcomes = [];
+        document.getElementById('call-time').value = new Date().toTimeString().slice(0, 5);
+        goTo('intake');
+      }
+
+      goTo('intake');
+    })();
   </script>
 </body>
 </html>
