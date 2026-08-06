@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
+      color-scheme: light dark;
       --bg: #0b1020;
       --bg-soft: #0e1428;
       --surface: #ffffff;
@@ -32,6 +33,11 @@
         --muted: #94a3b8;
         --primary-100: #1e293b;
       }
+    }
+
+    input[type="radio"],
+    input[type="checkbox"] {
+      accent-color: var(--primary);
     }
 
     body {
